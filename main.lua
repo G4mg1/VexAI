@@ -7,11 +7,13 @@ local DATA   = LOCAL .. "/data"
 local SCRIPT = LOCAL .. "/scripts"
 
 local function mkdir(path)
-    pcall(function()
-        if isfolder and not isfolder(path) and makefolder then
-            makefolder(path)
-        end
-    end)
+    if isfolder and makefolder then
+        pcall(function()
+            if not isfolder(path) then
+                makefolder(path)
+            end
+        end)
+    end
 end
 
 mkdir(LOCAL)
@@ -41,8 +43,6 @@ local function getreq()
         or (krnl and krnl.request)
 end
 
-local http = game:GetService("HttpService")
-
 local function fetch(rel)
     local url = REPO .. rel
     local req = getreq()
@@ -70,38 +70,37 @@ local FILES = {
     "interaction/Permissions.lua",
     "interaction/Tools.lua",
     "interaction/Chat.lua",
-    "data/settings.json",
-    "data/history.json",
 }
 
 for _, rel in ipairs(FILES) do
     local path = LOCAL .. "/" .. rel
-    local isUserData = rel:sub(1, 5) == "data/"
-    if not (isUserData and isfile and isfile(path)) then
-        local body = fetch(rel)
-        if body and writefile then
-            pcall(writefile, path, body)
-        end
+    local body = fetch(rel)
+    if body and writefile then
+        pcall(writefile, path, body)
     end
 end
 
-if writefile and not (isfile and isfile(LOCAL .. "/logo.png")) then
-    local logo = fetch("logo.png")
-    if logo then pcall(writefile, LOCAL .. "/logo.png", logo) end
+if writefile and isfile and not isfile(LOCAL .. "/data/settings.json") then
+    local s = fetch("data/settings.json")
+    if s then pcall(writefile, LOCAL .. "/data/settings.json", s) end
+end
+
+if writefile and isfile and not isfile(LOCAL .. "/data/history.json") then
+    local h = fetch("data/history.json")
+    if h then pcall(writefile, LOCAL .. "/data/history.json", h) end
+end
+
+if writefile and isfile and not isfile(LOCAL .. "/logo.png") then
+    local l = fetch("logo.png")
+    if l then pcall(writefile, LOCAL .. "/logo.png", l) end
 end
 
 local function import(path)
-    if not readfile then
-        error("[VEX] executor has no readfile")
-    end
+    if not readfile then error("[VEX] executor has no readfile") end
     local src = readfile(path)
-    if not src or src == "" then
-        error("[VEX] empty or missing file: " .. path)
-    end
+    if not src or src == "" then error("[VEX] empty file: " .. path) end
     local fn, err = loadstring(src)
-    if not fn then
-        error("[VEX] failed to compile " .. path .. ": " .. tostring(err))
-    end
+    if not fn then error("[VEX] compile failed " .. path .. ": " .. tostring(err)) end
     return fn()
 end
 
