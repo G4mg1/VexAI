@@ -1,0 +1,13 @@
+{
+  "apikey": "",
+  "model": "openai/gpt-oss-120b:fireworks-ai",
+  "persona": "You are VEX, a helpful Roblox AI agent. Be concise.",
+  "perms": {
+    "isfile": true,
+    "writefile": false,
+    "createfolder": false,
+    "read_device_file": false,
+    "decompile_toread": false,
+    "autorun": false
+  }
+}
