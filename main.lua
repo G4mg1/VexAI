@@ -6,9 +6,20 @@ local ASSETS = LOCAL .. "/Assets"
 local DATA   = LOCAL .. "/data"
 local SCRIPT = LOCAL .. "/scripts"
 
-for _, f in ipairs({LOCAL, LIB, INTER, ASSETS, DATA, SCRIPT}) do
-    if not isfolder(f) then makefolder(f) end
+local function mkdir(path)
+    pcall(function()
+        if isfolder and not isfolder(path) and makefolder then
+            makefolder(path)
+        end
+    end)
 end
+
+mkdir(LOCAL)
+mkdir(LIB)
+mkdir(INTER)
+mkdir(ASSETS)
+mkdir(DATA)
+mkdir(SCRIPT)
 
 getgenv().VEX = {
     root        = LOCAL,
@@ -22,13 +33,33 @@ getgenv().VEX = {
 }
 
 local function getreq()
-    return (syn and syn.request) or (http and http.request)
-        or http_request or request
-        or (fluxus and fluxus.request) or (krnl and krnl.request)
+    return (syn and syn.request)
+        or (http and http.request)
+        or http_request
+        or request
+        or (fluxus and fluxus.request)
+        or (krnl and krnl.request)
 end
 
 local http = game:GetService("HttpService")
-local req  = getreq()
+
+local function fetch(rel)
+    local url = REPO .. rel
+    local req = getreq()
+    if req then
+        local ok, res = pcall(function()
+            return req({ Url = url, Method = "GET" })
+        end)
+        if ok and res and res.StatusCode == 200 and res.Body and res.Body ~= "" then
+            return res.Body
+        end
+    end
+    local ok, body = pcall(function()
+        return game:HttpGet(url, true)
+    end)
+    if ok and body and body ~= "" then return body end
+    return nil
+end
 
 local FILES = {
     "lib/Theme.lua",
@@ -43,39 +74,34 @@ local FILES = {
     "data/history.json",
 }
 
-local function fetch(rel)
-    if not req then return nil end
-    local ok, res = pcall(function()
-        return req({ Url = REPO .. rel, Method = "GET" })
-    end)
-    if ok and res and res.StatusCode == 200 then return res.Body end
-    return nil
-end
-
-local function sync()
-    for _, rel in ipairs(FILES) do
-        local local_path = LOCAL .. "/" .. rel
-        local isUserData = rel:sub(1, 5) == "data/"
-        if not (isUserData and isfile(local_path)) then
-            local body = fetch(rel)
-            if body then
-                pcall(function() writefile(local_path, body) end)
-            end
+for _, rel in ipairs(FILES) do
+    local path = LOCAL .. "/" .. rel
+    local isUserData = rel:sub(1, 5) == "data/"
+    if not (isUserData and isfile and isfile(path)) then
+        local body = fetch(rel)
+        if body and writefile then
+            pcall(writefile, path, body)
         end
     end
 end
 
-sync()
-
-if not isfile(LOCAL .. "/logo.png") then
+if writefile and not (isfile and isfile(LOCAL .. "/logo.png")) then
     local logo = fetch("logo.png")
-    if logo then pcall(function() writefile(LOCAL .. "/logo.png", logo) end) end
+    if logo then pcall(writefile, LOCAL .. "/logo.png", logo) end
 end
 
 local function import(path)
+    if not readfile then
+        error("[VEX] executor has no readfile")
+    end
     local src = readfile(path)
-    local fn  = loadstring(src)
-    assert(fn, "failed to compile " .. path)
+    if not src or src == "" then
+        error("[VEX] empty or missing file: " .. path)
+    end
+    local fn, err = loadstring(src)
+    if not fn then
+        error("[VEX] failed to compile " .. path .. ": " .. tostring(err))
+    end
     return fn()
 end
 
