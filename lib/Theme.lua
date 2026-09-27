@@ -1,0 +1,15 @@
+return {
+    bg         = Color3.fromRGB(38, 38, 36),
+    sidebar    = Color3.fromRGB(26, 25, 24),
+    panel      = Color3.fromRGB(48, 47, 45),
+    panelHover = Color3.fromRGB(58, 56, 54),
+    border     = Color3.fromRGB(64, 62, 58),
+    text       = Color3.fromRGB(245, 244, 239),
+    textMuted  = Color3.fromRGB(168, 162, 154),
+    accent     = Color3.fromRGB(217, 119, 87),
+    accentSoft = Color3.fromRGB(230, 160, 120),
+    accentDark = Color3.fromRGB(150, 80, 55),
+    danger     = Color3.fromRGB(200, 90, 80),
+    font       = Enum.Font.Gotham,
+    fontBold   = Enum.Font.GothamBold,
+}
